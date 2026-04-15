@@ -8,7 +8,7 @@
 
 void printBanner() {
     std::cout << "========================================\n";
-    std::cout << "       CTF Password Cracker v1.0        \n";
+    std::cout << "           Kracker v1.0                 \n";
     std::cout << "========================================\n\n";
 }
 
@@ -68,13 +68,13 @@ void printUsage(const char* prog) {
     std::cout << "  -c, --charset <chars>   Charset for brute force (default: a-z0-9)\n";
     std::cout << "  -l, --length <min-max>  Password length range for brute (default: 1-8)\n";
     std::cout << "  -T, --threads <num>     Number of threads (default: auto)\n";
-    std::cout << "  --hid                   Identify hash type and exit\n";
+    std::cout << "  --hash <hash>           Identify hash type and exit when used alone\n";
     std::cout << "  --case-perm             Try case permutations\n";
     std::cout << "  --help                  Show this help\n\n";
     std::cout << "Examples:\n";
     std::cout << "  " << prog << " -h 5f4dcc3b5aa765d61d8327deb882cf99 -w rockyou.txt\n";
     std::cout << "  " << prog << " -h 5f4dcc3b5aa765d61d8327deb882cf99 -b -l 1-5\n";
-    std::cout << "  " << prog << " --hid 5f4dcc3b5aa765d61d8327deb882cf99\n";
+    std::cout << "  " << prog << " --hash 5f4dcc3b5aa765d61d8327deb882cf99\n";
     std::cout << "  " << prog << " -h <hash> -w wordlist.txt --case-perm\n\n";
 }
 
@@ -114,8 +114,6 @@ int main(int argc, char* argv[]) {
             }
         } else if (strcmp(argv[i], "-T") == 0 || strcmp(argv[i], "--threads") == 0) {
             if (i + 1 < argc) threads = std::stoi(argv[++i]);
-        } else if (strcmp(argv[i], "--hid") == 0) {
-            identifyMode = true;
         } else if (strcmp(argv[i], "--case-perm") == 0) {
             casePermutations = true;
         } else if (strcmp(argv[i], "--help") == 0) {
@@ -130,8 +128,8 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    // Hash identification mode
-    if (identifyMode) {
+    // Hash identification mode - auto detect when only --hash provided
+    if (!targetHash.empty() && wordlistPath.empty() && !bruteMode) {
         printHashInfo(targetHash);
         return 0;
     }
