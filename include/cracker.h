@@ -5,6 +5,8 @@
 #include <vector>
 #include <atomic>
 #include <functional>
+#include <thread>
+#include <queue>
 #include "hash.h"
 
 namespace cracker {
@@ -50,7 +52,11 @@ namespace cracker {
         CrackConfig config_;
         std::atomic<size_t> attempts_;
         std::atomic<bool> running_;
+        std::atomic<bool> progressRunning_;
+        std::thread progressThread_;
 
+        void startProgressReporter();
+        void stopProgressReporter();
         bool checkHash(const std::string& candidate, const std::string& target);
         std::string hashInput(const std::string& input, hasher::HashType type);
     };

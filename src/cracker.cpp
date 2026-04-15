@@ -7,16 +7,47 @@
 #include <chrono>
 #include <algorithm>
 #include <cctype>
+#include <iostream>
 
 namespace cracker {
 
 Cracker::Cracker(const CrackConfig& config)
     : config_(config), attempts_(0), running_(false) {}
 
+void Cracker::startProgressReporter() {
+    progressRunning_.store(true);
+    progressThread_ = std::thread([this]() {
+        auto lastTime = std::chrono::high_resolution_clock::now();
+        size_t lastAttempts = 0;
+        while (progressRunning_.load() && running_.load()) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+            auto now = std::chrono::high_resolution_clock::now();
+            size_t current = attempts_.load();
+            double elapsed = std::chrono::duration<double>(now - lastTime).count();
+            if (elapsed > 0) {
+                size_t rate = static_cast<size_t>((current - lastAttempts) / elapsed);
+                std::cout << "\r[*] Attempts: " << current << " | Rate: " << rate << "/s" << std::flush;
+            }
+            lastAttempts = current;
+            lastTime = now;
+        }
+    });
+}
+
+void Cracker::stopProgressReporter() {
+    progressRunning_.store(false);
+    if (progressThread_.joinable()) {
+        progressThread_.join();
+    }
+    std::cout << "\n";
+}
+
 CrackResult Cracker::crack() {
     running_.store(true);
     attempts_.store(0);
     auto start = std::chrono::high_resolution_clock::now();
+
+    startProgressReporter();
 
     CrackResult result;
     switch (config_.hashType) {
@@ -35,6 +66,7 @@ CrackResult Cracker::crack() {
             result.attempts = 0;
     }
 
+    stopProgressReporter();
     auto end = std::chrono::high_resolution_clock::now();
     result.timeElapsed = std::chrono::duration<double>(end - start).count();
     return result;
@@ -52,6 +84,8 @@ CrackResult Cracker::dictionaryAttack() {
     std::atomic<bool> found{false};
     std::string foundPassword;
     std::mutex resultMutex;
+
+    const size_t BATCH_SIZE = 1000;
 
     std::vector<std::thread> workers;
     int numThreads = config_.threads > 0 ? config_.threads : std::thread::hardware_concurrency();
@@ -71,6 +105,8 @@ CrackResult Cracker::dictionaryAttack() {
                     workQueue.pop();
                 }
 
+                attempts_++;
+
                 // Check base word
                 if (checkHash(candidate, config_.targetHash)) {
                     found.store(true);
@@ -87,6 +123,7 @@ CrackResult Cracker::dictionaryAttack() {
                     auto perms = generatePermutations(candidate);
                     for (const auto& perm : perms) {
                         if (!running_.load()) return;
+                        attempts_++;
                         if (checkHash(perm, config_.targetHash)) {
                             found.store(true);
                             {
@@ -102,29 +139,49 @@ CrackResult Cracker::dictionaryAttack() {
         });
     }
 
-    // Producer thread
-    std::thread producer([&]() {
-        std::string line;
-        while (std::getline(file, line) && running_.load()) {
-            if (!line.empty()) {
-                // Remove trailing whitespace
-                while (!line.empty() && std::isspace(line.back())) {
-                    line.pop_back();
-                }
+    // Producer - batch loading
+    std::vector<std::string> batch;
+    std::string line;
+    while (std::getline(file, line) && running_.load()) {
+        if (!line.empty()) {
+            while (!line.empty() && std::isspace(line.back())) {
+                line.pop_back();
+            }
+            batch.push_back(line);
+
+            if (batch.size() >= BATCH_SIZE) {
                 {
                     std::lock_guard<std::mutex> lock(queueMutex);
-                    workQueue.push(line);
+                    for (auto& item : batch) {
+                        workQueue.push(item);
+                    }
                 }
-                cv.notify_one();
+                cv.notify_all();
+                batch.clear();
             }
         }
-        file.close();
-    });
+    }
+
+    // Flush remaining
+    if (!batch.empty() && running_.load()) {
+        {
+            std::lock_guard<std::mutex> lock(queueMutex);
+            for (auto& item : batch) {
+                workQueue.push(item);
+            }
+        }
+        cv.notify_all();
+    }
+
+    file.close();
+
+    // Signal workers to stop when done
+    running_.store(false);
+    cv.notify_all();
 
     for (auto& worker : workers) {
         worker.join();
     }
-    producer.join();
 
     if (found.load()) {
         return {true, foundPassword, attempts_.load(), 0};
@@ -273,7 +330,12 @@ std::vector<std::string> Cracker::applyRules(const std::string& word) {
 
 bool Cracker::checkHash(const std::string& candidate, const std::string& target) {
     std::string computed = hashInput(candidate, config_.hashType);
-    return computed == target;
+    if (computed.length() != target.length()) return false;
+    // Case-insensitive compare for hex
+    for (size_t i = 0; i < target.length(); i++) {
+        if (std::tolower(computed[i]) != std::tolower(target[i])) return false;
+    }
+    return true;
 }
 
 std::string Cracker::hashInput(const std::string& input, hasher::HashType type) {
