@@ -58,7 +58,7 @@ echo "    Binary: ./build/KracKer"
 echo "========================================"
 echo ""
 echo "[*] Installing to /usr/local/bin..."
-sudo cp ./build/KracKer /usr/local/bin/
+sudo cp $PWD/build/KracKer /usr/local/bin/
 sudo ln -sf /usr/local/bin/KracKer /usr/local/bin/kracker
 echo ""
 echo "Quick start:"
