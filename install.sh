@@ -46,6 +46,7 @@ esac
 # Build
 echo ""
 echo "[*] Building KracKer..."
+rm -rf build
 mkdir -p build
 cd build
 cmake ..
