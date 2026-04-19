@@ -57,6 +57,10 @@ echo "[+] Build complete!"
 echo "    Binary: ./build/KracKer"
 echo "========================================"
 echo ""
+echo "[*] Installing to /usr/local/bin..."
+sudo cp ./build/KracKer /usr/local/bin/
+sudo ln -sf /usr/local/bin/KracKer /usr/local/bin/kracker
+echo ""
 echo "Quick start:"
-echo "  ./build/KracKer -h 5f4dcc3b5aa765d61d8327deb882cf99 -w rockyou.txt"
-echo "  ./build/KracKer --help"
+echo "  kracker -h 5f4dcc3b5aa765d61d8327deb882cf99 -w rockyou.txt"
+echo "  kracker --help"
