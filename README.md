@@ -48,7 +48,7 @@ sudo apt install cmake libssl-dev g++
 |--------|-------------|
 | `-h, --hash <hash>` | Target hash to crack |
 | `-t, --type <type>` | Hash type: md5, sha1, sha256, sha512 (auto-detect if omitted) |
-| `-w, --wordlist <file>` | Wordlist file for dictionary attack |
+| `-w, --wordlist <file>` | Wordlist file for dictionary attack (default: `/usr/share/wordlists/rockyou.txt`) |
 | `-b, --brute` | Use brute force attack |
 | `-c, --charset <chars>` | Charset for brute force (default: a-z0-9) |
 | `-l, --length <min-max>` | Password length range for brute (default: 1-8) |

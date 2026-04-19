@@ -175,10 +175,7 @@ CrackResult Cracker::dictionaryAttack() {
 
     file.close();
 
-    // Signal workers to stop when done
-    running_.store(false);
-    cv.notify_all();
-
+    // Wait for queue to drain and workers to finish
     for (auto& worker : workers) {
         worker.join();
     }

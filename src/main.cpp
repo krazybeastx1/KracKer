@@ -83,7 +83,7 @@ int main(int argc, char* argv[]) {
 
     std::string targetHash;
     std::string hashTypeStr;
-    std::string wordlistPath;
+    std::string wordlistPath = "/usr/share/wordlists/rockyou.txt";
     bool bruteMode = false;
     bool identifyMode = false;
     std::string charset = "abcdefghijklmnopqrstuvwxyz0123456789";

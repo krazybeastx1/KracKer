@@ -15,3 +15,5 @@ add_executable(KracKer
 )
 
 target_link_libraries(KracKer OpenSSL::SSL OpenSSL::Crypto pthread)
+
+install(TARGETS KracKer DESTINATION /usr/local/bin)
