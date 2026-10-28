@@ -228,7 +228,14 @@ CrackerConfig parse_args(int argc, char** argv) {
             type_arg = next_value("--type");
             config.hash_type = parse_hash_type(type_arg);
             if (config.hash_type == HashType::UNKNOWN) {
-                std::cerr << "Error: Unsupported hash type: " << type_arg << "\n";
+                std::string shown = type_arg;
+                if (shown.size() > 48) shown = shown.substr(0, 45) + "...";
+                std::cerr << "Error: Unknown hash type: " << shown << "\n";
+                if (type_arg.find('$') != std::string::npos || type_arg.size() > 32) {
+                    std::cerr << "Hint: -t/--type takes an algorithm name (for example "
+                                 "kerberoast-rc4). Pass the hash itself with -h/--hash.\n";
+                }
+                std::cerr << "Run --list-hashes to see the accepted names.\n";
                 std::exit(1);
             }
         } else if (arg == "--identify") {

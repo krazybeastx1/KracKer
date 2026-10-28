@@ -360,6 +360,32 @@ TEST(KerberoastHash, Rc4HmacKnownVector) {
     EXPECT_FALSE(algo->verify(hash, "hashcat1", HashParams{}));
 }
 
+TEST(KerberoastHash, IdentifyByEtype) {
+    auto& registry = HashRegistry::instance();
+
+    // Only the etype actually present should be reported, not every
+    // Kerberoast variant.
+    auto rc4 = registry.identify_hash(
+        "$krb5tgs$23$*user1$DOMAIN.LOCAL$HTTP/webserver.domain.local*$aa$bb");
+    ASSERT_EQ(rc4.size(), 1u);
+    EXPECT_EQ(rc4.front(), HashType::KERBEROAST_RC4_HMAC);
+
+    auto aes128 = registry.identify_hash("$krb5tgs$17$*user$realm$spn*$aa$bb");
+    ASSERT_EQ(aes128.size(), 1u);
+    EXPECT_EQ(aes128.front(), HashType::KERBEROAST_AES128_CTS_HMAC);
+
+    auto aes256 = registry.identify_hash("$krb5tgs$18$*user$realm$spn*$aa$bb");
+    ASSERT_EQ(aes256.size(), 1u);
+    EXPECT_EQ(aes256.front(), HashType::KERBEROAST_AES256_CTS_HMAC);
+
+    auto des3 = registry.identify_hash("$krb5tgs$16$*user$realm$spn*$aa$bb");
+    ASSERT_EQ(des3.size(), 1u);
+    EXPECT_EQ(des3.front(), HashType::KERBEROAST_DES3_CBC_SHA1);
+
+    EXPECT_TRUE(registry.identify_hash("$krb5tgs$99$aa$bb").empty());
+    EXPECT_TRUE(registry.identify_hash("$krb5tgs$").empty());
+}
+
 TEST(SlowHashes, Identify) {
     auto& registry = HashRegistry::instance();
     

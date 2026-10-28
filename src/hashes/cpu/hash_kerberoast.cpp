@@ -412,7 +412,23 @@ std::string KerberoastHash::format_hash(const HashResult& result, const HashPara
 }
 
 bool KerberoastHash::identify_hash(const std::string& hash_string) const {
-    return hash_string.size() >= 9 && hash_string.substr(0, 9) == "$krb5tgs$";
+    // Match on the etype token so that $krb5tgs$23$ is not reported as
+    // AES128/AES256/DES3 as well.
+    static const std::string prefix = "$krb5tgs$";
+    if (hash_string.compare(0, prefix.size(), prefix) != 0) return false;
+
+    const std::string rest = hash_string.substr(prefix.size());
+    const size_t sep = rest.find('$');
+    if (sep == std::string::npos || sep == 0) return false;
+
+    uint32_t etype = 0;
+    try {
+        etype = static_cast<uint32_t>(std::stoul(rest.substr(0, sep)));
+    } catch (...) {
+        return false;
+    }
+
+    return etype == static_cast<uint32_t>(etype_);
 }
 
 std::unique_ptr<KerberoastHash> KerberoastHash::create_rc4_hmac() {
