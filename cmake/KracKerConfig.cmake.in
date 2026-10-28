@@ -1,0 +1,38 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+
+find_dependency(OpenSSL REQUIRED)
+find_dependency(Threads REQUIRED)
+find_dependency(nlohmann_json 3.10.0)
+
+if(@KRACKER_WITH_OPENCL@)
+    find_dependency(OpenCL)
+endif()
+
+if(@KRACKER_WITH_CUDA@)
+    find_dependency(CUDA)
+endif()
+
+include("${CMAKE_CURRENT_LIST_DIR}/KracKerTargets.cmake")
+
+set(KracKer_WITH_OPENCL @KRACKER_WITH_OPENCL@)
+set(KracKer_WITH_CUDA @KRACKER_WITH_CUDA@)
+set(KracKer_WITH_DISTRIBUTED @KRACKER_WITH_DISTRIBUTED@)
+set(KracKer_WITH_ARGON2 @KRACKER_WITH_ARGON2@)
+
+set(KracKer_INCLUDE_DIRS "${PACKAGE_PREFIX_DIR}/include")
+set(KracKer_LIBRARIES
+    KracKer::KracKerCore
+    KracKer::KracKerHashesCPU
+    KracKer::KracKerSession)
+
+if(KracKer_WITH_OPENCL)
+    list(APPEND KracKer_LIBRARIES KracKer::KracKerHashesOpenCL)
+endif()
+
+if(KracKer_WITH_CUDA)
+    list(APPEND KracKer_LIBRARIES KracKer::KracKerHashesCUDA)
+endif()
+
+check_required_components(KracKer)

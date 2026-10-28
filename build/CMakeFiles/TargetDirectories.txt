@@ -1,3 +1,0 @@
-/Users/krazy/KracKer/build/CMakeFiles/KracKer.dir
-/Users/krazy/KracKer/build/CMakeFiles/edit_cache.dir
-/Users/krazy/KracKer/build/CMakeFiles/rebuild_cache.dir
