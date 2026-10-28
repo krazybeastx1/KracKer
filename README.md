@@ -203,6 +203,10 @@ make distclean
 # Dictionary attack (MD5 of "password")
 KracKer -t md5 -h 5f4dcc3b5aa765d61d8327deb882cf99 -w /usr/share/wordlists/rockyou.txt
 
+# -w is optional: dictionary/hybrid/PRINCE/association modes fall back to
+# /usr/share/wordlists/rockyou.txt when it exists
+KracKer -t md5 -h 5f4dcc3b5aa765d61d8327deb882cf99
+
 # Specify the type explicitly
 KracKer -h 8846f7eaee8fb117ad06bdd830b7586c -t ntlm -w rockyou.txt
 
@@ -228,6 +232,43 @@ KracKer -h <hash> -w rockyou.txt -o cracked.txt --format hash:pass
 KracKer -h <hash> -w rockyou.txt -s session.json   # Ctrl+C to stop
 KracKer -h <hash> -w rockyou.txt -s session.json   # resumes where it stopped
 ```
+
+### Hash examples
+
+Every sample below was cracked with this build. The plaintext is `password`
+(except the Kerberoast vector, whose plaintext is `hashcat`).
+
+```bash
+printf 'password\n' > pw.txt
+KracKer -t <type> -h '<hash>' -w pw.txt
+```
+
+| Type | Example hash | `-t` |
+|------|--------------|------|
+| MD5 | `5f4dcc3b5aa765d61d8327deb882cf99` | `md5` |
+| SHA-1 | `5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8` | `sha1` |
+| SHA-224 | `d63dc919e201d7bc4c825630d2cf25fdc93d4b2f0d46706d29038d01` | `sha224` |
+| SHA-256 | `5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8` | `sha256` |
+| SHA-384 | `a8b64babd0aca91a59bdbb7761b421d4f2bb38280d3a75ba0f21f2bebc45583d446c598660c94ce680c47d19c30783a7` | `sha384` |
+| SHA-512 | `b109f3bbbc244eb82441917ed06d618b9008dd09b3befd1b5e07394c706a8bb980b1d7785e5976ec049b46df5f1326af5a2ea6d103fd07c95385ffab0cacbc86` | `sha512` |
+| NTLM | `8846f7eaee8fb117ad06bdd830b7586c` | `ntlm` |
+| bcrypt (cost 6) | `$2b$06$VSQMWJzELBJ8CN2WZAWyPu6R3cwb1dgcgNviLK4qIQdZeiPauDkp6` | `bcrypt` (auto-detected) |
+| scrypt (N=16384, r=8, p=1) | `$s0$16384$8$1$MDEyMzQ1Njc4OWFiY2RlZg$ApdFWK8NumyY29Er9pEt++7OZiECvcqPQXeIayRc7Ck` | `scrypt` (auto-detected) |
+| Kerberoast RC4-HMAC | `$krb5tgs$23$*user$realm$test/spn*$b548e10f5694ae018d7ad63c257af7dc$35e8e456…cf24d9a` | `kerberoast-rc4` (auto-detected) |
+
+Full Kerberoast vector (hashcat's reference TGS-REP, plaintext `hashcat`):
+
+```
+$krb5tgs$23$*user$realm$test/spn*$b548e10f5694ae018d7ad63c257af7dc$35e8e45658860bc31a859b41a08989265f4ef8afd75652ab4d7a30ef151bf6350d879ae189a8cb769e01fa573c6315232b37e4bcad9105520640a781e5fd85c09615e78267e494f433f067cc6958200a82f70627ce0eebc2ac445729c2a8a0255dc3ede2c4973d2d93ac8c1a56b26444df300cb93045d05ff2326affaa3ae97f5cd866c14b78a459f0933a550e0b6507bf8af27c2391ef69fbdd649dd059a4b9ae2440edd96c82479645ccdb06bae0eead3b7f639178a90cf24d9a
+```
+
+```bash
+printf 'hashcat\n' > pw.txt
+KracKer -h '$krb5tgs$23$*user$realm$test/spn*$b548e10f…$35e8e456…' -w pw.txt
+```
+
+> 32-hex hashes are ambiguous between MD5 and NTLM, so pass `-t md5` or
+> `-t ntlm`. bcrypt, scrypt and `$krb5tgs$` hashes are auto-detected.
 
 ### bcrypt and scrypt
 
@@ -270,6 +311,8 @@ Hash Options:
 Attack Modes:
   -a, --attack <mode>         dict, brute, mask, hybrid, prince, assoc
   -w, --wordlist <file>       Wordlist for dict/hybrid/prince/assoc
+                              (default: /usr/share/wordlists/rockyou.txt
+                              when it exists)
   -r, --rules <file>          Rules file for dictionary attack
   -m, --mask <pattern>        Mask pattern for mask attack
   --custom-charset1..4        Custom charsets ?1–?4

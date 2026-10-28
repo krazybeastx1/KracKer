@@ -49,6 +49,8 @@ void print_usage(const char* prog) {
         "Attack Modes:\n"
         "  -a, --attack <mode>         Attack mode: dict, brute, mask, hybrid, prince, assoc (default: dict)\n"
         "  -w, --wordlist <file>       Wordlist for dictionary/hybrid/prince/assoc attacks\n"
+        "                              (default: /usr/share/wordlists/rockyou.txt\n"
+        "                              when that file exists)\n"
         "  -r, --rules <file>          Rules file for dictionary attack\n"
         "  -m, --mask <pattern>        Mask pattern for mask attack (hashcat syntax)\n"
         "  --custom-charset1 <chars>   Custom charset ?1\n"
